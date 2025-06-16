@@ -85,7 +85,15 @@ async function validateLogin(username, password) {
 
         if (rows.length > 0) {
             const user = rows[0];
-            if (await bcrypt.compare(password, user.password)) {
+            const stored = user.password || '';
+            let passOk = false;
+            if (stored.startsWith('$2')) {
+                passOk = await bcrypt.compare(password, stored);
+            } else {
+                passOk = stored === password;
+            }
+
+            if (passOk) {
                 result.valid      = true;
                 result.userId     = user.id;
                 result.msg        = 'login correct';
