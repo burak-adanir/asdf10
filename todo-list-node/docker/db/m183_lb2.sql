@@ -133,8 +133,8 @@ insert into roles (ID, title) values (1, 'Admin');
 
 
 insert into users (ID, username, password, mfa_enabled, mfa_secret) values
-(1, 'admin1', 'Awesome.Pass34', 1, 'PJDDSTS2INCWWUTGKVWGIKBROVBWI4DQJJCE6UZ7OZPEC323FRQQ'),
-(2, 'user1', 'Amazing.Pass23', 0, NULL);
+(1, 'admin1', '$2b$10$eVdQHPHtZoa6HzzDJziEFe58AZMFjDTqfDO8Z5kTA4xUCW.5TlLmK', 1, 'PJDDSTS2INCWWUTGKVWGIKBROVBWI4DQJJCE6UZ7OZPEC323FRQQ'),
+(2, 'user1', '$2b$10$99FkJ.3iTpI9IhBM.AlBhuPuTGr2BIE2keDgjJNp3OJfFoLvdPwnS', 0, NULL);
 
 insert into permissions(ID, userID, roleID) values(null, 1, 1);
 insert into permissions(ID, userID, roleID) values(null, 2, 2);

@@ -45,7 +45,7 @@ function recordFailure(req) {
   }
   attempts[ip] = entry;
 
-  const username = req.query?.username || '-';
+  const username = req.body?.username || req.query?.username || '-';
   logFailed(ip, username);
 }
 
