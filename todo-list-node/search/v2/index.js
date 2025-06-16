@@ -1,4 +1,5 @@
 const db = require('../../fw/db');
+const { escapeHtml } = require('../../fw/utils');
 
 async function search(req) {
     if (req.query.userid === undefined || req.query.terms === undefined){
@@ -9,10 +10,13 @@ async function search(req) {
     let terms = req.query.terms;
     let result = '';
 
-    let stmt = await db.executeStatement("select ID, title, state from tasks where userID = "+userid+" and title like '%"+terms+"%'");
+    let stmt = await db.executeStatement(
+        'select ID, title, state from tasks where userID = ? and title like ?',
+        [userid, `%${terms}%`]
+    );
     if (stmt.length > 0) {
         stmt.forEach(function(row) {
-            result += row.title+' ('+row.state+')<br />';
+            result += escapeHtml(row.title)+' ('+row.state+')<br />';
         });
     }
 

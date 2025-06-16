@@ -1,4 +1,5 @@
 const db = require('./fw/db');
+const { escapeHtml } = require('./fw/utils');
 
 async function getHtml(req) {
     let title = '';
@@ -13,7 +14,7 @@ async function getHtml(req) {
         console.log(req.query.id);
         taskId = req.query.id;
         let conn = await db.connectDB();
-        let [result, fields] = await conn.query('select ID, title, state from tasks where ID = '+taskId);
+        let [result] = await conn.execute('select ID, title, state from tasks where ID = ?', [taskId]);
         if(result.length > 0) {
             title = result[0].title;
             state = result[0].state;
@@ -29,7 +30,7 @@ async function getHtml(req) {
         <input type="hidden" name="id" value="`+taskId+`" />
         <div class="form-group">
             <label for="title">Description</label>
-            <input type="text" class="form-control size-medium" name="title" id="title" value="`+title+`">
+            <input type="text" class="form-control size-medium" name="title" id="title" value="`+escapeHtml(title)+`">
         </div>
         <div class="form-group">
             <label for="state">State</label>
