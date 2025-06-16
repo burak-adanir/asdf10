@@ -1,4 +1,5 @@
 const db = require('../fw/db');
+const { escapeHtml } = require('../fw/utils');
 
 async function getHtml(req) {
     let html = `
@@ -14,13 +15,13 @@ async function getHtml(req) {
     `;
 
     let conn = await db.connectDB();
-    let [result, fields] = await conn.query('select ID, title, state from tasks where UserID = ' + req.cookies.userid);
+    let [result] = await conn.execute('select ID, title, state from tasks where UserID = ?', [req.cookies.userid]);
     console.log(result);
     result.forEach(function(row) {
         html += `
             <tr>
                 <td>`+row.ID+`</td>
-                <td class="wide">`+row.title+`</td>
+                <td class="wide">`+escapeHtml(row.title)+`</td>
                 <td>`+ucfirst(row.state)+`</td>
                 <td>
                     <a href="edit?id=`+row.ID+`">edit</a> | <a href="delete?id=`+row.ID+`">delete</a>
