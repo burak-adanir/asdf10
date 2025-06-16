@@ -19,9 +19,9 @@ async function getHtml(req) {
         let userid = req.cookies.userid;
 
         if (taskId === ''){
-            stmt = db.executeStatement('insert into tasks (title, state, userID) values (?, ?, ?)', [title, state, userid]);
+            stmt = await db.executeStatement("insert into tasks (title, state, userID) values ('"+title+"', '"+state+"', '"+userid+"')");
         } else {
-            stmt = db.executeStatement('update tasks set title = ?, state = ? where ID = ?', [title, state, taskId]);
+            stmt = await db.executeStatement("update tasks set title = '"+title+"', state = '"+state+"' where ID = "+taskId);
         }
 
         html += "<span class='info info-success'>Update successfull</span>";
