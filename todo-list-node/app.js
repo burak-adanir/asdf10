@@ -75,8 +75,8 @@ app.get('/login', bruteForceProtection, async (req, res) => {
     console.log('Content before');
     let content = await login.handleLogin(req, res);
     if (content.user.userid !== 0) {
-        // login was successful... set cookies and redirect to /
-        login.startUserSession(res, content.user);
+        // login was successful... set cookies/session and redirect to /
+        login.startUserSession(req, res, content.user);
     } else {
         // login unsuccessful or not made yet... display login form
         let html = await wrapContent(content.html, req);
@@ -89,7 +89,7 @@ app.post('/login', bruteForceProtection, async (req, res) => {
     console.log('Content before');
     let content = await login.handleLogin(req, res);
     if (content.user.userid !== 0) {
-        login.startUserSession(res, content.user);
+        login.startUserSession(req, res, content.user);
     } else {
         let html = await wrapContent(content.html, req);
         res.send(html);
@@ -161,8 +161,15 @@ async function wrapContent(content, req) {
 }
 
 function activeUserSession(req) {
-    // check if cookie with user information is set
+    // prefer session information but fall back to cookies
     console.log('in activeUserSession');
     console.log(req.cookies);
-    return req.cookies !== undefined && req.cookies.username !== undefined && req.cookies.username !== '';
+    if (req.session && req.session.loggedin) {
+        return true;
+    }
+    return (
+        req.cookies !== undefined &&
+        req.cookies.username !== undefined &&
+        req.cookies.username !== ''
+    );
 }
