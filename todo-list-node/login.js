@@ -59,8 +59,14 @@ async function handleLogin(req, res) {
     return { html: msg + getHtml(false, username, ''), user };
 }
 
-function startUserSession(res, user) {
+function startUserSession(req, res, user) {
     console.log('Starting session for user', user.userid);
+    // persist login details inside the session too
+    if (req.session) {
+        req.session.loggedin = true;
+        req.session.username = user.username;
+        req.session.userid   = user.userid;
+    }
     res.cookie('username', user.username, { httpOnly: true });
     res.cookie('userid', user.userid, { httpOnly: true });
     res.redirect('/');
