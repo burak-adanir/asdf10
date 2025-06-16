@@ -84,6 +84,18 @@ app.get('/login', bruteForceProtection, async (req, res) => {
     }
 });
 
+// Login via POST with Brute-Force Protection
+app.post('/login', bruteForceProtection, async (req, res) => {
+    console.log('Content before');
+    let content = await login.handleLogin(req, res);
+    if (content.user.userid !== 0) {
+        login.startUserSession(res, content.user);
+    } else {
+        let html = await wrapContent(content.html, req);
+        res.send(html);
+    }
+});
+
 // Logout
 app.get('/logout', (req, res) => {
     req.session.destroy();

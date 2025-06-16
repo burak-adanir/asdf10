@@ -7,9 +7,9 @@ async function handleLogin(req, res) {
     let msg = '';
     let user = { username: '', userid: 0 };
 
-    const username = req.query.username;
-    const password = req.query.password;
-    const mfaCode  = req.query.mfaCode;
+    const username = req.body.username || req.query.username;
+    const password = req.body.password || req.query.password;
+    const mfaCode  = req.body.mfaCode  || req.query.mfaCode;
 
     if (typeof username !== 'undefined' && typeof password !== 'undefined') {
         console.log('Validating login for', username);
@@ -108,7 +108,7 @@ function getHtml(showMfa, username = '', password = '') {
     if (showMfa) {
         return `
         <h2>Enter MFA Code</h2>
-        <form method="get" action="/login">
+        <form method="post" action="/login">
             <input type="hidden" name="username" value="${username}">
             <input type="hidden" name="password" value="${password}">
             <div class="form-group">
@@ -122,14 +122,14 @@ function getHtml(showMfa, username = '', password = '') {
     }
     return `
     <h2>Login</h2>
-    <form id="form" method="get" action="/login">
+    <form id="form" method="post" action="/login">
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" class="form-control size-medium" name="username" id="username" value="${username}">
         </div>
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="text" class="form-control size-medium" name="password" id="password" value="${password}">
+            <input type="password" class="form-control size-medium" name="password" id="password" value="${password}">
         </div>
         <div class="form-group">
             <input id="submit" type="submit" class="btn size-auto" value="Login" />
