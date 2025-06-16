@@ -7,7 +7,7 @@ async function getHtml(req) {
     // see if the id exists in the database
     if (req.body.id !== undefined && req.body.id.length !== 0) {
         taskId = req.body.id;
-        let stmt = await db.executeStatement('select ID, title, state from tasks where ID = ' + taskId);
+        let stmt = await db.executeStatement('select ID, title, state from tasks where ID = ?', [taskId]);
         if (stmt.length === 0) {
             taskId = '';
         }

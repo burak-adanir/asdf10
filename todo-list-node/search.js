@@ -7,6 +7,9 @@ async function getHtml(req) {
     }
 
     let provider = req.body.provider;
+    if (!provider.startsWith('/search/v2/')) {
+        return 'Invalid provider';
+    }
     let terms = req.body.terms;
     let userid = req.body.userid;
 

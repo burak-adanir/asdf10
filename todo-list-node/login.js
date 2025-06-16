@@ -1,4 +1,5 @@
 const db = require('./fw/db');
+const bcrypt = require('bcrypt');
 const speakeasy = require('speakeasy'); // for MFA
 const { recordFailure, resetAttempts } = require('./fw/bf-protection');
 
@@ -60,8 +61,8 @@ async function handleLogin(req, res) {
 
 function startUserSession(res, user) {
     console.log('Starting session for user', user.userid);
-    res.cookie('username', user.username);
-    res.cookie('userid', user.userid);
+    res.cookie('username', user.username, { httpOnly: true });
+    res.cookie('userid', user.userid, { httpOnly: true });
     res.redirect('/');
 }
 
@@ -78,7 +79,7 @@ async function validateLogin(username, password) {
 
         if (rows.length > 0) {
             const user = rows[0];
-            if (password === user.password) {
+            if (await bcrypt.compare(password, user.password)) {
                 result.valid      = true;
                 result.userId     = user.id;
                 result.msg        = 'login correct';
