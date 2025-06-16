@@ -1,0 +1,142 @@
+const db = require('./fw/db');
+const speakeasy = require('speakeasy'); // for MFA
+const { recordFailure, resetAttempts } = require('./fw/bf-protection');
+
+async function handleLogin(req, res) {
+    let msg = '';
+    let user = { username: '', userid: 0 };
+
+    const username = req.query.username;
+    const password = req.query.password;
+    const mfaCode  = req.query.mfaCode;
+
+    if (typeof username !== 'undefined' && typeof password !== 'undefined') {
+        console.log('Validating login for', username);
+        const result = await validateLogin(username, password);
+        console.log('Validation result:', result);
+
+        if (result.valid) {
+            if (result.mfaEnabled) {
+                // MFA flow
+                if (!mfaCode) {
+                    // Prompt for MFA code
+                    msg = getHtml(true, username, password);
+                    return { html: msg, user };
+                } else {
+                    const verified = speakeasy.totp.verify({
+                        secret: result.mfaSecret,
+                        encoding: 'base32',
+                        token: mfaCode
+                    });
+                    if (verified) {
+                        resetAttempts(req); // Successful MFA
+                        user.username = username;
+                        user.userid = result.userId;
+                        return { html: msg, user };
+                    } else {
+                        recordFailure(req); // Failed MFA
+                        msg = 'Invalid MFA code. Try again.';
+                        return { html: msg + getHtml(true, username, password), user };
+                    }
+                }
+            } else {
+                // No MFA
+                resetAttempts(req);
+                user.username = username;
+                user.userid = result.userId;
+                return { html: msg, user };
+            }
+        } else {
+            // Invalid login
+            recordFailure(req);
+            msg = result.msg;
+        }
+    } else {
+        msg = 'Please enter username and password';
+    }
+
+    return { html: msg + getHtml(false, username, ''), user };
+}
+
+function startUserSession(res, user) {
+    console.log('Starting session for user', user.userid);
+    res.cookie('username', user.username);
+    res.cookie('userid', user.userid);
+    res.redirect('/');
+}
+
+async function validateLogin(username, password) {
+    const result = { valid: false, msg: '', userId: 0, mfaEnabled: false, mfaSecret: '' };
+    const dbConnection = await db.connectDB();
+
+    try {
+        // Use parameterized query to prevent SQL injection
+        const [rows] = await dbConnection.execute(
+            `SELECT id, username, password, mfa_enabled, mfa_secret FROM users WHERE username = ?`,
+            [username]
+        );
+
+        if (rows.length > 0) {
+            const user = rows[0];
+            if (password === user.password) {
+                result.valid      = true;
+                result.userId     = user.id;
+                result.msg        = 'login correct';
+                result.mfaEnabled = Boolean(user.mfa_enabled);
+                result.mfaSecret  = user.mfa_secret;
+            } else {
+                result.msg = 'Incorrect password';
+            }
+        } else {
+            result.msg = 'Username does not exist';
+        }
+        console.log(rows);
+    } catch (err) {
+        console.error('DB error:', err);
+        result.msg = 'Internal error';
+    } finally {
+        if (dbConnection) {
+            await dbConnection.end(); // Or .release() if using pool
+        }
+    }
+
+    return result;
+}
+
+function getHtml(showMfa, username = '', password = '') {
+    if (showMfa) {
+        return `
+        <h2>Enter MFA Code</h2>
+        <form method="get" action="/login">
+            <input type="hidden" name="username" value="${username}">
+            <input type="hidden" name="password" value="${password}">
+            <div class="form-group">
+                <label for="mfaCode">MFA Code</label>
+                <input type="text" class="form-control" name="mfaCode" id="mfaCode" autofocus>
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn" value="Verify">
+            </div>
+        </form>`;
+    }
+    return `
+    <h2>Login</h2>
+    <form id="form" method="get" action="/login">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control size-medium" name="username" id="username" value="${username}">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="text" class="form-control size-medium" name="password" id="password" value="${password}">
+        </div>
+        <div class="form-group">
+            <input id="submit" type="submit" class="btn size-auto" value="Login" />
+        </div>
+    </form>`;
+}
+
+module.exports = {
+    handleLogin,
+    startUserSession
+};
